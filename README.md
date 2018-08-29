@@ -27,7 +27,7 @@ $ cp -r ~/protobuf-2.6.1/lib/libprotobuf.* protobuf-shareddtor/lib
 3. Build and run the reproduction code
 
 ```
-$ export LD_LIBRARY_PATH=/<somewhere>/protobuf-shareddtor-crash
+$ export LD_LIBRARY_PATH=/<somewhere>/protobuf-shareddtor-crash/lib
 $ mkdir -p build
 $ cd build/
 $ cmake ..
@@ -37,38 +37,40 @@ $ ./myapp
 ## Result
 ```
 $ ./myapp 
-### Starting: ModelProto::SharedCtor() (0x11c70e0)
-### Finishing: ModelProto::SharedCtor() (0x11c70e0)
-### Starting: ModelProto::SharedCtor() (0x11cf320)
-### Finishing: ModelProto::SharedCtor() (0x11cf320)
+### Starting: ModelProto::SharedCtor() (0xf810e0)
+### Finishing: ModelProto::SharedCtor() (0xf810e0)
+### Starting: ModelProto::SharedCtor() (0xf89320)
+### Finishing: ModelProto::SharedCtor() (0xf89320)
 # Invoking: foo::new_onnx_model()
 ## Starting: onnx::ModelProto::new_onnx_model()
-### Starting: ModelProto::SharedCtor() (0x7ffd1cfaa250)
-### Finishing: ModelProto::SharedCtor() (0x7ffd1cfaa250)
-## Finishing: onnx::ModelProto::new_onnx_model() (onnx::ModelProto is 0x7ffd1cfaa250)
-## GetEmptyStringAlreadyInited in libfoo.so is 0x11c3260
-# Finished: foo::new_onnx_model() (onnx::ModelProto is 0x7ffd1cfaa250)
+### Starting: ModelProto::SharedCtor() (0x7ffea029c020)
+### Finishing: ModelProto::SharedCtor() (0x7ffea029c020)
+## GetEmptyStringAlreadyInited in libfoo.so is 0xf7d260
+## Finishing: onnx::ModelProto::new_onnx_model() (returns 0x7ffea029c020)
+# Finished: foo::new_onnx_model() (returned value is 0x7ffea029c020)
 producer_name: 
-### Starting: ModelProto::SharedDtor() (0x7ffd1cfaa250)
-### GetEmptyStringAlreadyInited() is 0x11cbfb0
-### Deleting: producer_name_ (0x7ffd1cfaa250)
-### Deleting: producer_version_ (0x7ffd1cfaa250)
-*** Error in `./myapp': double free or corruption (out): 0x00000000011c9ae0 ***
+### Starting: ModelProto::SharedDtor() (0x7ffea029c020)
+### GetEmptyStringAlreadyInited() is 0xf85fb0
+### Deleting: producer_name_ (= 0xf7d260)
+### Deleting: producer_version_ (= 0xf7d260)
+*** Error in `./myapp': double free or corruption (out): 0x0000000000f83ae0 ***
 ======= Backtrace: =========
-/lib/x86_64-linux-gnu/libc.so.6(+0x777e5)[0x7f0f106af7e5]
-/lib/x86_64-linux-gnu/libc.so.6(+0x8037a)[0x7f0f106b837a]
-/lib/x86_64-linux-gnu/libc.so.6(cfree+0x4c)[0x7f0f106bc53c]
-./myapp(_ZN4onnx10ModelProto10SharedDtorEv+0x181)[0x42d797]
+/lib/x86_64-linux-gnu/libc.so.6(+0x777e5)[0x7f7d751077e5]
+/lib/x86_64-linux-gnu/libc.so.6(+0x8037a)[0x7f7d7511037a]
+/lib/x86_64-linux-gnu/libc.so.6(cfree+0x4c)[0x7f7d7511453c]
+./myapp(_ZN4onnx10ModelProto10SharedDtorEv+0x183)[0x42d799]
 ./myapp(_ZN4onnx10ModelProtoD1Ev+0x24)[0x42d59c]
-./myapp(main+0xde)[0x451347]
-/lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf0)[0x7f0f10658830]
+./myapp(main+0xde)[0x45134d]
+/lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf0)[0x7f7d750b0830]
 ./myapp(_start+0x29)[0x422449]
 ======= Memory map: ========
 ...
 ```
 
 ## Discussion
-As pointed out by [protocolbuffers/protobuf#435](https://github.com/protocolbuffers/protobuf/issues/435), `GetEmptyStringAlreadyInited()` points to different address between `libfoo.so` and `myapp`. protobuf in `myapp` tries to delete `producer_name_` and `producer_version_` even if their actual value is GetEmptyStringAlreadyInited() allocated in `libfoo.so`.
+The conditions in `SharedDtor()` are always `true` even if the actual value of `producer_name_` and `producer_version_` are `GetEmptyStringAlreadyInited()` because it is allocated by `libfoo.so` not by `myapp`. As pointed out in the [issue](https://github.com/protocolbuffers/protobuf/issues/435), it points to different address between `libfoo.so` and `myapp` (See `GetEmptyStringAlreadyInited() is ...` in the result).
+
+As it turned out, it tries to delete `GetEmptyStringAlreadyInited()` in `libfoo.so` (= `0xf7d260`) twice and produces `double free or corruption` error.
 
 ```cpp
 void ModelProto::SharedCtor() {

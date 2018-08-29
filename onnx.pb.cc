@@ -2474,23 +2474,23 @@ void ModelProto::SharedDtor() {
   std::cout << "### Starting: ModelProto::SharedDtor() (" << std::hex << this << ")" << std::endl;
   std::cout << "### GetEmptyStringAlreadyInited() is " << std::hex << &::google::protobuf::internal::GetEmptyStringAlreadyInited() << std::endl;
   if (producer_name_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    std::cout << "### Deleting: producer_name_ (" << std::hex << this << ")" << std::endl;
+    std::cout << "### Deleting: producer_name_ (= " << std::hex << producer_name_ << ")" << std::endl;
     delete producer_name_;
   }
   if (producer_version_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    std::cout << "### Deleting: producer_version_ (" << std::hex << this << ")" << std::endl;
+    std::cout << "### Deleting: producer_version_ (= " << std::hex << producer_version_ << ")" << std::endl;
     delete producer_version_;
   }
   if (domain_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    std::cout << "### Deleting: domain_ (" << std::hex << this << ")" << std::endl;
+    std::cout << "### Deleting: producer_version_ (= " << std::hex << domain_ << ")" << std::endl;
     delete domain_;
   }
   if (doc_string_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
-    std::cout << "### Deleting: doc_string_ (" << std::hex << this << ")" << std::endl;
+    std::cout << "### Deleting: producer_version_ (= " << std::hex << doc_string_ << ")" << std::endl;
     delete doc_string_;
   }
   if (this != default_instance_) {
-    std::cout << "Deleting: graph_ (" << std::hex << this << ")" << std::endl;
+    std::cout << "### Deleting: producer_version_ (= " << std::hex << graph_ << ")" << std::endl;
     delete graph_;
   }
   std::cout << "### Finishing: ModelProto::SharedDtor() (" << std::hex << this << ")" << std::endl;
